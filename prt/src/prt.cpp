@@ -117,7 +117,7 @@ namespace ProjEnv
         std::vector<Eigen::Array3f> SHCoeffiecents(SHNum);
         for (int i = 0; i < SHNum; i++)
             SHCoeffiecents[i] = Eigen::Array3f(0);
-        float sumWeight = 0;
+        //float sumWeight = 0;
         for (int i = 0; i < 6; i++)
         {
             for (int y = 0; y < height; y++)
@@ -134,7 +134,7 @@ namespace ProjEnv
                     // Edit Start
                     auto delta_w = CalcArea(x, y, width, height);
 
-                    for (int l = 0; l < SHOrder; l++)
+                    for (int l = 0; l <= SHOrder; l++)
                     {
                         for (int m = -l; m <= l; m++)
                         {
@@ -180,7 +180,7 @@ public:
         else if (type == "interreflection")
         {
             m_Type = Type::Interreflection;
-            m_Bounce = props.getInteger("bounce", 1);
+            m_maxBounce = props.getInteger("bounce", 1);
         }
         else
         {
@@ -190,12 +190,12 @@ public:
 
     // Edit Start
     std::unique_ptr<std::vector<double>> computeInterreflectionSH(Eigen::MatrixXf* directionTransportSHCoeffs,const Point3f& pos,const Normal3f& normal,
-        const Scene* scene,int bounces)
+        const Scene* scene,int curBounces)
     {
         std::unique_ptr<std::vector<double>> coeffs(new std::vector<double>());
         coeffs->assign(SHCoeffLength, 0.0);
 
-        if (bounces>m_Bounce)
+        if (curBounces >m_maxBounce)
         {
             return coeffs;
         }
@@ -233,8 +233,9 @@ public:
                         + normals.col(triangeIndex.z()) * baryCenter.z()
                     ).normalized();
 
-                    auto nextBouncesCoeffs = computeInterreflectionSH(directionTransportSHCoeffs, hitPos, hitNormal, scene, bounces + 1);
+                    auto nextBouncesCoeffs = computeInterreflectionSH(directionTransportSHCoeffs, hitPos, hitNormal, scene, curBounces + 1);
 
+                    //jingz 核心代码 面元重心插值interpolateSH后的系数+累计各次级面元以directionTransportSHCoeffs为基准的重心插值系数
                     for (int i = 0; i < SHCoeffLength; i++)
                     {
                         auto interpolateSH = directionTransportSHCoeffs->col(triangeIndex.x()).coeffRef(i) * baryCenter.x()
@@ -256,9 +257,7 @@ public:
 
         return coeffs;
     }//computeInterreflectionSH
-    
     // Edit End
-
 
     virtual void preprocess(const Scene *scene) override
     {
@@ -335,7 +334,7 @@ public:
             {
                 const Point3f& v = mesh->getVertexPositions().col(i);
                 const Normal3f& n = mesh->getVertexNormals().col(i).normalized();
-                auto inDirectionCoeffs = computeInterreflectionSH(&m_TransportSHCoeffs, v, n, scene, m_Bounce);//jingz todo这里应该是值复制，而不是后续修改叠加
+                auto inDirectionCoeffs = computeInterreflectionSH(&m_TransportSHCoeffs, v, n, scene, 1);
 
                 for (int j = 0; j < SHCoeffLength; j++)
                 {
@@ -391,10 +390,10 @@ public:
         // TODO: you need to delete the following four line codes after finishing your calculation to SH,
         //       we use it to visualize the normals of model for debug.
         // TODO: 在完成了球谐系数计算后，你需要删除下列四行，这四行代码的作用是用来可视化模型法线
-        if (c.isZero()) {
-            auto n_ = its.shFrame.n.cwiseAbs();
-            return Color3f(n_.x(), n_.y(), n_.z());
-        }
+        //if (c.isZero()) {
+        //    auto n_ = its.shFrame.n.cwiseAbs();
+        //    return Color3f(n_.x(), n_.y(), n_.z());
+        //}
         return c;
     }
 
@@ -405,7 +404,7 @@ public:
 
 private:
     Type m_Type;
-    int m_Bounce = 1;
+    int m_maxBounce = 1;
     int m_SampleCount = 100;
     std::string m_CubemapPath;
     Eigen::MatrixXf m_TransportSHCoeffs;
