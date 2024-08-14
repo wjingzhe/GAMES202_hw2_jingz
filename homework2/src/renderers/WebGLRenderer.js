@@ -47,7 +47,7 @@ class WebGLRenderer {
                 this.gl.useProgram(this.meshes[i].shader.program.glShaderProgram);
                 this.gl.uniform3fv(this.meshes[i].shader.program.uniforms.uLightPos, this.lights[l].entity.lightPos);
 
-                for (let k in this.meshes[i].material.uniforms) {
+                for (let k in this.meshes[i].material.uniforms) {//逐个顶点绑定旋转后的PrecomputeL系数，分RGB共3分部，名义上是矩阵类型
 
                     let cameraModelMatrix = mat4.create();
                     // Edit Start
@@ -62,12 +62,12 @@ class WebGLRenderer {
                     }
 
                     // Bonus - Fast Spherical Harmonic Rotation
-                    let precomputeL_RGBMat3 = getRotationPrecomputeL(precomputeL[guiParams.envmapId], cameraModelMatrix);//讲旋转之后的光照信息计算出来
+                    let precomputeL_RGBMat3 = getRotationPrecomputeL(precomputeL[guiParams.envmapId], cameraModelMatrix);//讲旋转之后的光照信息计算出来，9行对应9个系数，RGB各自3分量
                     
                     // Edit Start
                     //let Mat3Value = getMat3ValueFromRGB(precomputeL[guiParams.envmapId])
-                    let Mat3Value = getMat3ValueFromRGB(precomputeL_RGBMat3)
-                    for(let j = 0; j < 3; j++){
+                    let Mat3Value = getMat3ValueFromRGB(precomputeL_RGBMat3)//光照部分L，分R,G,B各自有自己的光照系数,把9各系数xRGB的矩阵重新填充成对应的矩阵数组形式，便于VS绑定使用
+                    for(let j = 0; j < 3; j++){//R,G,B
                         if (k == 'uPrecomputeL['+j+']') {
                             //讲旋转后的光照绑定到shader属性中，和之前lightTranspose用同一套shader计算即可
                             gl.uniformMatrix3fv(

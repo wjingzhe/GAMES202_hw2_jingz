@@ -129,7 +129,7 @@ namespace ProjEnv
                     Eigen::Vector3f dir = cubemapDirs[i * width * height + y * width + x];
 
                     int index = (y * width + x) * channel;
-                    Eigen::Array3f Le(images[i][index + 0], images[i][index + 1],images[i][index + 2]);
+                    Eigen::Array3f Le(images[i][index + 0], images[i][index + 1],images[i][index + 2]);//R/G/B三个分量组成的向量
 
                     // Edit Start
                     auto delta_w = CalcArea(x, y, width, height);
@@ -325,7 +325,9 @@ public:
                 m_TransportSHCoeffs.col(i).coeffRef(j) = (*shCoeff)[j]/M_PI;
                 //Edit End
             }
-        }
+        }//for_j
+
+        //计算额外的反弹射光
         if (m_Type == Type::Interreflection)
         {
             // TODO: leave for bonus
@@ -350,7 +352,7 @@ public:
         {
             const MatrixXu &F = mesh->getIndices();
             uint32_t idx0 = F(0, f), idx1 = F(1, f), idx2 = F(2, f);
-            for (int j = 0; j < SHCoeffLength; j++)
+            for (int j = 0; j < SHCoeffLength; j++)//每个顶点各自SH系数，RGB各分部共用LightTransport部分。系数个数等于阶的平方个，j最大值为(L^2-1)
             {
                 fout << m_TransportSHCoeffs.col(idx0).coeff(j) << " ";
             }
@@ -381,9 +383,9 @@ public:
                                                                 sh2 = m_TransportSHCoeffs.col(its.tri_index.z());
         const Eigen::Matrix<Vector3f::Scalar, SHCoeffLength, 1> rL = m_LightCoeffs.row(0), gL = m_LightCoeffs.row(1), bL = m_LightCoeffs.row(2);
 
-        Color3f c0 = Color3f(rL.dot(sh0), gL.dot(sh0), bL.dot(sh0)),
-                c1 = Color3f(rL.dot(sh1), gL.dot(sh1), bL.dot(sh1)),
-                c2 = Color3f(rL.dot(sh2), gL.dot(sh2), bL.dot(sh2));
+        Color3f c0 = Color3f(rL.dot(sh0), gL.dot(sh0), bL.dot(sh0)),//顶点0
+                c1 = Color3f(rL.dot(sh1), gL.dot(sh1), bL.dot(sh1)),//顶点1
+                c2 = Color3f(rL.dot(sh2), gL.dot(sh2), bL.dot(sh2));//顶点2
 
         const Vector3f &bary = its.bary;
         Color3f c = bary.x() * c0 + bary.y() * c1 + bary.z() * c2;

@@ -7,12 +7,18 @@ function getRotationPrecomputeL(precompute_L, rotationMatrix){
 
 	let shRotateMatrix3x3 = computeSquareMatrix_3by3(r);
 	let shRotateMatrix5x5 = computeSquareMatrix_5by5(r);
+	/*
+	computeSquareMatrix_3by3是求第一阶的3x3旋转矩阵 
+	，而computeSquareMatrix_5by5是求第二阶的5x5旋转矩阵 
+	，最后在getRotationPrecomputeL调用这两个函数并计算出整体旋转后的系数。
+	*/
 
 	let result = [];
 	for(let i=0;i<9;i++){
 		result[i]=[];
 	}
 
+	//按照RGB分量重复构建9行3列的矩阵，以便后面再复制拓宽成矩阵数据
 	for(let i =0;i<3;i++){
 		let L_SH_R_3 = math.multiply([precompute_L[1][i],precompute_L[2][i],precompute_L[3][i]],shRotateMatrix3x3);//第L=1阶的有效旋转
 		let L_SH_R_5 = math.multiply([precompute_L[4][i],precompute_L[5][i],precompute_L[6][i],precompute_L[7][i],precompute_L[8][i]],shRotateMatrix5x5);
@@ -23,7 +29,7 @@ function getRotationPrecomputeL(precompute_L, rotationMatrix){
 		result[2][i] = L_SH_R_3._data[1];
 		result[3][i] = L_SH_R_3._data[2];
 
-		result[4][i] = L_SH_R_5._data[0];
+		result[4][i] = L_SH_R_5._data[0];//第L=2阶的旋转后系数
 		result[5][i] = L_SH_R_5._data[1];
 		result[6][i] = L_SH_R_5._data[2];
 		result[7][i] = L_SH_R_5._data[3];
@@ -42,10 +48,11 @@ function computeSquareMatrix_3by3(rotationMatrix){ // 计算方阵SA(-1) 3*3
 
 
 	// 2、{Proj(ni)} - A  A_inverse
-	let n1_sh = SHEval(n1[0],n1[1],n1[2],3);//3维的向量n1投影到第L=1阶sh（共3x3个系数，但只取前2*L+1=3个作为当前频率的有效值）
+	let n1_sh = SHEval(n1[0],n1[1],n1[2],3);//3维的向量n1投影到第L=1阶sh（共3x3个系数
 	let n2_sh = SHEval(n2[0],n2[1],n2[2],3);
 	let n3_sh = SHEval(n3[0],n3[1],n3[2],3);
 
+	//但只取第L=1的（2*L+1=3）个作为当前阶数对应频率的有效值）
 	let A = math.matrix(
 		[
 			[n1_sh[1],n2_sh[1],n3_sh[1]],
@@ -68,6 +75,7 @@ function computeSquareMatrix_3by3(rotationMatrix){ // 计算方阵SA(-1) 3*3
 	let n2_r_sh = SHEval(n2_r[0],n2_r[1],n2_r[2],3);
 	let n3_r_sh = SHEval(n3_r[0],n3_r[1],n3_r[2],3);
 
+	//但只取第L=1的（2*L+1=3）个作为当前阶数对应频率的有效值）
 	let S = math.matrix(
 		[
 			[n1_r_sh[1],n2_r_sh[1],n3_r_sh[1]],
@@ -83,7 +91,7 @@ function computeSquareMatrix_3by3(rotationMatrix){ // 计算方阵SA(-1) 3*3
 
 function computeSquareMatrix_5by5(rotationMatrix){ // 计算方阵SA(-1) 5*5
 	
-	// 1、pick ni - {ni}
+	// 1、pick ni - {ni} //jingz 这堆法线是如何计算得出的
 	let k = 1 / math.sqrt(2);
 	let n1 = [1, 0, 0, 0];
 	let n2 = [0, 0, 1, 0];
@@ -92,13 +100,14 @@ function computeSquareMatrix_5by5(rotationMatrix){ // 计算方阵SA(-1) 5*5
 	let n5 = [0, k, k, 0];
 
 	
-	// 2、{P(ni)} - A  A_inverse
+	// 2、{Projection(ni)} - A  A_inverse
 	let n1_sh = SHEval(n1[0],n1[1],n1[2],3);//3维的向量n1投影到第L=2阶sh（共3x3个系数，但只取后2*L+1=5个作为当前频率的有效值）
 	let n2_sh = SHEval(n2[0],n2[1],n2[2],3);
 	let n3_sh = SHEval(n3[0],n3[1],n3[2],3);
 	let n4_sh = SHEval(n4[0],n4[1],n4[2],3);
 	let n5_sh = SHEval(n5[0],n5[1],n5[2],3);
 
+	//但只取第L=2的（2*L+1=5）个作为当前阶数对应频率的有效值）
 	let A = math.matrix(
 		[
 			[n1_sh[4],n2_sh[4],n3_sh[4],n4_sh[4],n5_sh[4]],
@@ -127,6 +136,7 @@ function computeSquareMatrix_5by5(rotationMatrix){ // 计算方阵SA(-1) 5*5
 	let n4_r_sh = SHEval(n4_r[0],n4_r[1],n4_r[2],3);
 	let n5_r_sh = SHEval(n5_r[0],n5_r[1],n5_r[2],3);
 
+	//但只取第L=2的（2*L+1=5）个作为当前阶数对应频率的有效值）
 	let S = math.matrix(
 		[
 			[n1_r_sh[4],n2_r_sh[4],n3_r_sh[4],n4_r_sh[4],n5_r_sh[4]],
